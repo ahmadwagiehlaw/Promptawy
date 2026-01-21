@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, X } from "lucide-react";
+import { Download, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IOSInstallPrompt } from "./ios-install-prompt";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
 
 export function InstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -11,6 +19,7 @@ export function InstallPrompt() {
 
     useEffect(() => {
         const handler = (e: any) => {
+            console.log("📱 PWA Install Prompt Captured!", e);
             e.preventDefault();
             setDeferredPrompt(e);
             setShowPrompt(true);
@@ -18,8 +27,8 @@ export function InstallPrompt() {
 
         window.addEventListener('beforeinstallprompt', handler);
 
-        // Check if installed
         if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log("📱 App is already in standalone mode");
             setShowPrompt(false);
         }
 
@@ -37,25 +46,33 @@ export function InstallPrompt() {
     };
 
     // Return IOS prompt if not handled by standard event (Android/Desktop)
-    if (!showPrompt) return <IOSInstallPrompt />;
+    if (!deferredPrompt) return <IOSInstallPrompt />;
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-80">
-            <div className="bg-primary text-primary-foreground p-4 rounded-lg shadow-lg flex flex-col gap-3 animate-in slide-in-from-bottom duration-500">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h3 className="font-bold text-lg">Install App</h3>
-                        <p className="text-sm opacity-90">Add to home screen for quick access</p>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-primary-foreground/70 hover:text-white" onClick={() => setShowPrompt(false)}>
-                        <X className="w-4 h-4" />
+        <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="text-center flex flex-col items-center gap-2">
+                        <div className="p-3 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 mb-2">
+                            <Sparkles className="w-8 h-8 text-white" />
+                        </div>
+                        Install Promptawy App
+                    </DialogTitle>
+                    <DialogDescription className="text-center text-base pt-2">
+                        Get the best experience by installing the app.
+                        Works offline, syncs instantly, and looks great on your home screen.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-3 py-4">
+                    <Button onClick={handleInstall} size="lg" className="w-full gap-2 text-md font-bold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                        <Download className="w-5 h-5" />
+                        Install Application
+                    </Button>
+                    <Button variant="ghost" onClick={() => setShowPrompt(false)} className="text-muted-foreground hover:text-foreground">
+                        Maybe Later
                     </Button>
                 </div>
-                <Button onClick={handleInstall} variant="secondary" className="w-full gap-2 font-semibold">
-                    <Download className="w-4 h-4" />
-                    Install Now
-                </Button>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }
