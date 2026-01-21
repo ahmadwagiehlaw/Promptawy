@@ -1,9 +1,9 @@
-import { Prompt } from '@/lib/firestore';
+import { FirestoreService, Prompt } from '@/lib/firestore';
 import { VisualizerDialog } from './visualizer-dialog';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Badge } from 'lucide-react'; // Wait, standard badge is a component
 import { Button } from '@/components/ui/button';
-import { Copy, Image as ImageIcon, MoreHorizontal } from 'lucide-react';
+import { Copy, Check, Trash } from 'lucide-react';
+import { useState } from 'react';
 
 // Create a simple Badge component since I managed to miss installing it or creating it
 function SimpleBadge({ children, className }: { children: React.ReactNode, className?: string }) {
@@ -14,7 +14,30 @@ function SimpleBadge({ children, className }: { children: React.ReactNode, class
     );
 }
 
-export function PromptCard({ prompt }: { prompt: Prompt }) {
+export function PromptCard({ prompt, onDelete }: { prompt: Prompt, onDelete?: (id: string) => void }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(prompt.originalText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (window.confirm("Are you sure you want to delete this prompt?")) {
+            try {
+                if (prompt.id) {
+                    await FirestoreService.deletePrompt(prompt.id);
+                    if (onDelete) onDelete(prompt.id);
+                }
+            } catch (error) {
+                console.error("Delete failed", error);
+                alert("Failed to delete prompt");
+            }
+        }
+    };
+
     return (
         <Card className="overflow-hidden group hover:border-primary/50 transition-all duration-300">
             <CardHeader className="p-4 pb-2">
@@ -22,9 +45,6 @@ export function PromptCard({ prompt }: { prompt: Prompt }) {
                     <SimpleBadge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20">
                         {prompt.meta.art_style || 'General'}
                     </SimpleBadge>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
                 </div>
             </CardHeader>
             <CardContent className="p-4 pt-2">
@@ -46,9 +66,18 @@ export function PromptCard({ prompt }: { prompt: Prompt }) {
             <CardFooter className="p-4 pt-0 flex justify-between items-center text-muted-foreground">
                 <div className="flex gap-2">
                     <VisualizerDialog prompt={prompt} />
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                        onClick={handleDelete}
+                        title="Delete Prompt"
+                    >
+                        <Trash className="w-4 h-4" />
+                    </Button>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Copy className="w-3 h-3" />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy}>
+                    {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
                 </Button>
             </CardFooter>
         </Card>

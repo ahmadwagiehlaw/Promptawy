@@ -68,3 +68,23 @@ export async function analyzePrompt(text: string): Promise<AIResponse> {
         };
     }
 }
+
+export async function generateVisualDescription(promptText: string): Promise<string> {
+    if (!apiKey) {
+        throw new Error("Gemini API Key is missing");
+    }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    try {
+        const result = await model.generateContent([
+            "You are a visual artist. Describe this image prompt in vivid, flowing detail as if it were a finished painting or photograph. Focus on atmosphere, lighting, and texture. Keep it under 50 words.",
+            `Prompt: "${promptText}"`
+        ]);
+        const response = await result.response;
+        return response.text();
+    } catch (error) {
+        console.error("Gemini Visual Description Error:", error);
+        throw error;
+    }
+}

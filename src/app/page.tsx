@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Plus, LogIn } from "lucide-react";
+import { Search, Plus, LogIn, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { FirestoreService, Prompt } from "@/lib/firestore";
 import { ResultsGrid } from "@/components/results-grid";
@@ -13,10 +13,17 @@ import { useAuth } from "@/context/AuthContext";
 export default function Home() {
     const { user, loading: authLoading } = useAuth();
     const [query, setQuery] = useState("");
+    const [debouncedQuery, setDebouncedQuery] = useState("");
     const [showUpload, setShowUpload] = useState(false);
     const [showLogin, setShowLogin] = useState(false);
     const [prompts, setPrompts] = useState<Prompt[]>([]);
     const [loadingPrompts, setLoadingPrompts] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(10);
+
+    // Reset visible count when query changes
+    useEffect(() => {
+        setVisibleCount(10);
+    }, [debouncedQuery]);
 
     // Fetch prompts when user changes
     useEffect(() => {
@@ -33,15 +40,29 @@ export default function Home() {
         }
     }, [user]);
 
-    // Filter prompts locally
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedQuery(query);
+        }, 500); // Increased to 500ms
+
+        return () => clearTimeout(timer);
+    }, [query]);
+
     const filteredPrompts = prompts.filter(p => {
-        if (!query) return true;
-        const lowerQuery = query.toLowerCase();
-        return (
-            p.originalText.toLowerCase().includes(lowerQuery) ||
-            p.tags.some(t => t.toLowerCase().includes(lowerQuery)) ||
-            (p.meta.art_style && p.meta.art_style.toLowerCase().includes(lowerQuery))
-        );
+        if (!debouncedQuery) return true;
+
+        // Smart Search: Split by spaces to find ALL terms (AND logic)
+        const terms = debouncedQuery.toLowerCase().trim().split(/\s+/);
+
+        return terms.every(term => {
+            const inText = p.originalText.toLowerCase().includes(term);
+            const inTags = p.tags.some(t => t.toLowerCase().includes(term));
+            const inStyle = p.meta.art_style && p.meta.art_style.toLowerCase().includes(term);
+            const inMeta = Object.values(p.meta).some(val => typeof val === 'string' && val.toLowerCase().includes(term));
+
+            return inText || inTags || inStyle || inMeta;
+        });
     });
 
     if (authLoading) {
@@ -103,6 +124,28 @@ export default function Home() {
                         {showUpload ? "Close Import" : "Import Prompts"}
                     </Button>
 
+                    <Button
+                        variant="destructive"
+                        onClick={async () => {
+                            if (window.confirm("🔴 DANGER: Are you sure you want to delete ALL your prompts?\n\nThis action cannot be undone/recovered!")) {
+                                if (user) {
+                                    try {
+                                        await FirestoreService.deleteAllPrompts(user.uid);
+                                        setPrompts([]);
+                                        alert("Success: All prompts have been permanently deleted.");
+                                    } catch (error) {
+                                        console.error("Failed to delete all", error);
+                                        alert("Error: Failed to delete prompts. Please try again.");
+                                    }
+                                }
+                            }
+                        }}
+                        className="gap-2"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        Delete All Data
+                    </Button>
+
                 </div>
             </div>
 
@@ -139,7 +182,26 @@ export default function Home() {
                 {loadingPrompts ? (
                     <div className="text-center py-20 text-muted-foreground">Loading your prompts...</div>
                 ) : (
-                    <ResultsGrid prompts={filteredPrompts} />
+                    <>
+                        <ResultsGrid
+                            prompts={filteredPrompts.slice(0, visibleCount)}
+                            onDelete={(id) => {
+                                setPrompts(prev => prev.filter(p => p.id !== id));
+                            }}
+                        />
+
+                        {visibleCount < filteredPrompts.length && (
+                            <div className="flex justify-center mt-8 pb-12">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setVisibleCount(prev => prev + 20)}
+                                    className="min-w-[200px]"
+                                >
+                                    Load More ({filteredPrompts.length - visibleCount} remaining)
+                                </Button>
+                            </div>
+                        )}
+                    </>
                 )}
 
             </div>

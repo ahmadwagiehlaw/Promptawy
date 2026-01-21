@@ -26,7 +26,8 @@ export function VisualizerDialog({ prompt }: { prompt: Prompt }) {
             setDescription(result);
         } catch (error) {
             console.error("Failed to generate description:", error);
-            setDescription("Failed to generate visual description. Please try again.");
+            alert("Visualization failed. Check console for details. API Key might be invalid.");
+            setDescription("Failed to generate description.");
         } finally {
             setIsLoading(false);
         }

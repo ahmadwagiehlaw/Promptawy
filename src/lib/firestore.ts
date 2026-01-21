@@ -58,10 +58,12 @@ export const FirestoreService = {
 
     // Delete a prompt
     async deletePrompt(id: string) {
+        console.log(`[DEBUG] Deleting prompt with ID: ${id}`);
         try {
             await deleteDoc(doc(db, COLLECTION_NAME, id));
+            console.log(`[DEBUG] Prompt ${id} deleted successfully.`);
         } catch (e) {
-            console.error("Error deleting document: ", e);
+            console.error(`[DEBUG] Error deleting document ${id}: `, e);
             throw e;
         }
     },
@@ -122,5 +124,43 @@ export const FirestoreService = {
             }
         }
         return allIds;
+    },
+
+    // Delete all prompts for a user
+    async deleteAllPrompts(userId: string) {
+        console.log(`[DEBUG] Attempting to delete all prompts for user: ${userId}`);
+        try {
+            const q = query(collection(db, COLLECTION_NAME), where("userId", "==", userId));
+            const snapshot = await getDocs(q);
+
+            console.log(`[DEBUG] Found ${snapshot.docs.length} documents to delete.`);
+
+            if (snapshot.empty) {
+                console.warn("[DEBUG] No documents found for this user. Nothing to delete.");
+                return;
+            }
+
+            const batchSize = 500;
+            const chunks = [];
+
+            for (let i = 0; i < snapshot.docs.length; i += batchSize) {
+                chunks.push(snapshot.docs.slice(i, i + batchSize));
+            }
+
+            console.log(`[DEBUG] Split into ${chunks.length} batches.`);
+
+            for (const chunk of chunks) {
+                const batch = writeBatch(db);
+                chunk.forEach((doc) => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+                console.log(`[DEBUG] Successfully deleted batch of ${chunk.length} docs.`);
+            }
+            console.log("[DEBUG] All batches committed successfully.");
+        } catch (error) {
+            console.error("[DEBUG] Error in deleteAllPrompts:", error);
+            throw error;
+        }
     }
 };
