@@ -10,15 +10,26 @@ export interface ProcessedPrompt {
 function cleanText(text: string): string | null {
     if (!text || typeof text !== 'string') return null;
 
-    // Remove leading numbers/bullets (e.g. "1.", "2-", "-")
-    let cleaned = text.replace(/^[\d\-\.\)\s]+/, '').trim();
+    // 1. Remove numbering schemes:
+    // "1.", "1-", "(1)", "1)", "Chapter 1:", "Section 5 -", "A."
+    let cleaned = text.replace(/^(\d+[\.\-\)\s]+|\([0-9]+\)\s*|[a-z]\.|\s*-\s*)+/i, '').trim();
 
-    // Remove "Prompt:" prefix if exists
-    cleaned = cleaned.replace(/^prompt[:\s]+/i, '').trim();
+    // 2. Remove "Prompt:" or "Subject:" prefix
+    cleaned = cleaned.replace(/^(prompt|subject|description|image)[:\s]+/i, '').trim();
 
-    // Filter out content that is likely not a prompt (too short, or generic headers)
-    if (cleaned.length < 15) return null; // Increased threshold
-    if (/^(title|introduction|chapter|page|header)/i.test(cleaned)) return null;
+    // 3. Filter out junk/headers
+    // Too short?
+    if (cleaned.length < 15) return null;
+
+    // Looks like a header? (Short, no verbs usually, keywords)
+    // Matches: "Chapter 1", "Introduction", "Page 5", "Group A", "Prompt List"
+    if (/^(chapter|section|page|group|part|prompt list|title|intro|header)\s+\d+/i.test(cleaned)) return null;
+    if (/^(introduction|conclusion|summary|table of contents)$/i.test(cleaned)) return null;
+
+    // Remove quotes if the whole string is quoted
+    if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+        cleaned = cleaned.slice(1, -1).trim();
+    }
 
     return cleaned;
 }

@@ -69,7 +69,7 @@ export async function analyzePrompt(text: string): Promise<AIResponse> {
     }
 }
 
-export async function generateVisualDescription(promptText: string): Promise<string> {
+export async function enhancePrompt(promptText: string): Promise<string> {
     if (!apiKey) {
         throw new Error("Gemini API Key is missing");
     }
@@ -78,13 +78,13 @@ export async function generateVisualDescription(promptText: string): Promise<str
 
     try {
         const result = await model.generateContent([
-            "You are a visual artist. Describe this image prompt in vivid, flowing detail as if it were a finished painting or photograph. Focus on atmosphere, lighting, and texture. Keep it under 50 words.",
-            `Prompt: "${promptText}"`
+            "You are an expert AI Art Director and Prompt Engineer. Your task is to rewrite the user's prompt to be significantly more artistic, detailed, and visually evocative. \n\nCRITICAL SAFETY INSTRUCTION: If the original prompt contains simple/unsafe/NSFW terms (e.g. 'girl', 'blood', 'violence'), you MUST replace them with safe, high-quality, abstract, or cinematic alternatives that convey the same aesthetic mood without violating safety filters. \n\nFor example:\n- 'blood' -> 'crimson liquid', 'rose petals', 'dramatic red lighting'\n- 'violence' -> 'intense dynamic action', 'cinematic conflict'\n- 'naked' -> 'ethereal drapes', 'classical sculpture aesthetic'\n\nMake the final output a single, powerful paragraph ready for an image generator (like Midjourney). Do not add introductions.",
+            `Original Prompt: "${promptText}"`
         ]);
         const response = await result.response;
         return response.text();
     } catch (error) {
-        console.error("Gemini Visual Description Error:", error);
+        console.error("Gemini Enhancement Error:", error);
         throw error;
     }
 }
