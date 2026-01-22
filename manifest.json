@@ -1,0 +1,16 @@
+{
+    "name": "Promptawy AI",
+    "short_name": "Promptawy",
+    "description": "AI Prompt Manager",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#020617",
+    "theme_color": "#020617",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/6122/6122329.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

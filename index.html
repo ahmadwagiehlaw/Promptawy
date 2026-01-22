@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promptawy - AI Prompt Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="modal" style="text-align: center; max-width: 400px; padding: 40px;">
+            <h1 class="logo" style="margin-bottom: 20px; font-size: 2.5rem;">Promptawy</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 30px;">
+                Manage and enhance your AI prompts across all devices.
+            </p>
+            <button id="btn-login-google" class="btn btn-primary"
+                style="width: 100%; justify-content: center; padding: 12px;">
+                <i data-lucide="log-in"></i> Sign in with Google
+            </button>
+            <p id="login-error" style="color: var(--danger); margin-top: 15px; font-size: 0.9rem; display: none;">Login
+                Failed</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="container" id="app-container" style="display: none;">
+        <header>
+            <div class="logo">Promptawy</div>
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-upload" class="btn btn-primary">
+                    <i data-lucide="plus"></i> Import
+                </button>
+                <button id="btn-delete-all" class="btn btn-danger">
+                    <i data-lucide="trash-2"></i> Delete All
+                </button>
+                <button id="btn-logout" class="btn btn-ghost">
+                    <i data-lucide="log-out"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="search-bar">
+            <input type="text" id="search-input" class="search-input"
+                placeholder="Search prompts by tag, content, or style...">
+        </div>
+
+        <div id="loading-indicator" style="text-align: center; padding: 50px; display: none;">
+            <div class="loading-spinner" style="width: 40px; height: 40px;"></div>
+            <p style="margin-top: 10px; color: var(--text-secondary);">Loading your world...</p>
+        </div>
+
+        <div id="prompts-grid" class="grid">
+            <!-- Cards injected here -->
+        </div>
+
+        <div id="empty-state" style="text-align: center; padding: 50px; display: none; color: var(--text-secondary);">
+            <i data-lucide="inbox" style="width: 48px; height: 48px; opacity: 0.5; margin-bottom: 20px;"></i>
+            <p>No prompts found. Import some to get started!</p>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="import-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-title">
+                <i data-lucide="upload-cloud" style="color: var(--accent-blue);"></i> Import Prompts
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Select a .txt or .json file containing your prompts.
+            </p>
+            <input type="file" id="file-input" accept=".txt,.json"
+                style="width: 100%; padding: 20px; border: 2px dashed var(--border-color); border-radius: 8px; color: var(--text-secondary);">
+
+            <div id="import-status" style="margin-top: 15px; font-size: 0.9rem;"></div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-ghost"
+                    onclick="document.getElementById('import-modal').classList.remove('active')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhance Modal -->
+    <div id="enhance-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-title" style="color: var(--accent-purple);">
+                <i data-lucide="sparkles"></i> Magic Enhancer
+            </div>
+            <div id="enhance-content" style="margin-top: 15px;">
+                <div id="enhance-loading" style="text-align: center; padding: 20px; display: none;">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top: 10px;">Polishing your prompt...</p>
+                </div>
+                <div id="enhance-result" style="display: none;">
+                    <textarea id="enhance-text" readonly
+                        style="width: 100%; height: 150px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; resize: none;"></textarea>
+                    <button id="btn-copy-enhanced" class="btn btn-primary" style="width: 100%;">Copy & Close</button>
+                </div>
+            </div>
+            <button class="btn btn-ghost" style="width: 100%; margin-top: 10px;"
+                onclick="document.getElementById('enhance-modal').classList.remove('active')">Close</button>
+        </div>
+    </div>
+
+    <!-- PWA Install Modal -->
+    <div id="install-modal" class="modal-overlay">
+        <div class="modal" style="text-align: center;">
+            <div
+                style="background: linear-gradient(to right, var(--accent-blue), var(--accent-purple)); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i data-lucide="download" style="color: white; width: 30px; height: 30px;"></i>
+            </div>
+            <h2 style="margin-bottom: 10px;">Install App</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 25px;">
+                Add Promptawy to your home screen for the best experience.
+            </p>
+            <button id="btn-install-confirm" class="btn btn-primary"
+                style="width: 100%; justify-content: center; margin-bottom: 10px;">
+                Install Now
+            </button>
+            <button id="btn-install-cancel" class="btn btn-ghost" style="width: 100%; justify-content: center;">
+                Maybe Later
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="config.js"></script>
+    <script type="module" src="app.js"></script>
+    <script>
+        lucide.createIcons();
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+
+</html>
